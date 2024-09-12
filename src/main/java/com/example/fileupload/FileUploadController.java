@@ -1,11 +1,5 @@
 package com.example.fileupload;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -15,6 +9,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/files")
 public class FileUploadController {
@@ -22,10 +23,13 @@ public class FileUploadController {
     @Autowired
     private FileUploadService fileUploadService;
 
+    @Autowired
+    private UserService userService;
+
     private final String uploadDir = "uploads/";
 
     @PostMapping("/upload")
-    public ResponseEntity<FileUpload> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<FileUpload> uploadFile(@RequestParam("file") MultipartFile file, @RequestParam("userId") Long userId) {
         try {
             // Ensure the upload directory exists
             Path uploadDirPath = Paths.get(uploadDir);
@@ -47,7 +51,7 @@ public class FileUploadController {
             fileUpload.setFilePath(filePath);
             fileUpload.setUploadedAt(LocalDateTime.now());
 
-            FileUpload savedFile = fileUploadService.saveFile(fileUpload);
+            FileUpload savedFile = fileUploadService.saveFile(userId, fileUpload);
             return ResponseEntity.ok(savedFile);
 
         } catch (IOException e) {
@@ -57,10 +61,10 @@ public class FileUploadController {
     }
 
     @GetMapping("/download/{id}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable Long id) {
+    public ResponseEntity<Resource> downloadFile(@PathVariable Long id, @RequestParam("userId") Long userId) {
         try {
             // Fetch the file metadata from the database
-            FileUpload fileUpload = fileUploadService.getFileById(id);
+            FileUpload fileUpload = fileUploadService.getFileById(id, userId);
             Path path = Paths.get(fileUpload.getFilePath());
             Resource resource = new UrlResource(path.toUri());
 
@@ -75,9 +79,9 @@ public class FileUploadController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Void> deleteFile(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteFile(@PathVariable Long id, @RequestParam("userId") Long userId) {
         try {
-            fileUploadService.deleteFile(id);
+            fileUploadService.deleteFile(id, userId);
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             return ResponseEntity.status(500).build();
@@ -85,12 +89,22 @@ public class FileUploadController {
     }
 
     @PutMapping("/update/{id}")
-public ResponseEntity<FileUpload> updateFile(@PathVariable Long id, @RequestBody FileUpload updatedFileUpload) {
-    try {
-        FileUpload updatedFile = fileUploadService.updateFile(id, updatedFileUpload);
-        return ResponseEntity.ok(updatedFile);
-    } catch (Exception e) {
-        return ResponseEntity.status(500).build();
+    public ResponseEntity<FileUpload> updateFile(@PathVariable Long id, @RequestBody FileUpload updatedFileUpload, @RequestParam("userId") Long userId) {
+        try {
+            FileUpload updatedFile = fileUploadService.updateFile(id, updatedFileUpload, userId);
+            return ResponseEntity.ok(updatedFile);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
     }
-}
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<FileUpload>> getFilesByUser(@PathVariable Long userId) {
+        try {
+            List<FileUpload> files = fileUploadService.getAllFilesByUser(userId);
+            return ResponseEntity.ok(files);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
 }

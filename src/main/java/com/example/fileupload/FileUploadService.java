@@ -11,26 +11,35 @@ public class FileUploadService {
     @Autowired
     private FileUploadRepository fileUploadRepository;
 
-    public FileUpload saveFile(FileUpload fileUpload) {
+    @Autowired
+    private UserRepository userRepository;
+
+    public FileUpload saveFile(Long userId, FileUpload fileUpload) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        fileUpload.setUser(user);
         return fileUploadRepository.save(fileUpload);
     }
 
-    public FileUpload getFileById(Long id) {
-        return fileUploadRepository.findById(id)
+    public FileUpload getFileById(Long id, Long userId) {
+        FileUpload fileUpload = fileUploadRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("File not found with id: " + id));
+        if (!fileUpload.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Unauthorized access to file");
+        }
+        return fileUpload;
     }
 
-    public void deleteFile(Long id) {
-        FileUpload fileUpload = getFileById(id);
+    public void deleteFile(Long id, Long userId) {
+        FileUpload fileUpload = getFileById(id, userId);
         fileUploadRepository.delete(fileUpload);
     }
 
-    public List<FileUpload> getAllFiles() {
-        return fileUploadRepository.findAll();
+    public List<FileUpload> getAllFilesByUser(Long userId) {
+        return fileUploadRepository.findByUserId(userId);
     }
 
-    public FileUpload updateFile(Long id, FileUpload updatedFileUpload) {
-        FileUpload existingFileUpload = getFileById(id);
+    public FileUpload updateFile(Long id, FileUpload updatedFileUpload, Long userId) {
+        FileUpload existingFileUpload = getFileById(id, userId);
         existingFileUpload.setFileName(updatedFileUpload.getFileName());
         existingFileUpload.setFileType(updatedFileUpload.getFileType());
         existingFileUpload.setFilePath(updatedFileUpload.getFilePath());

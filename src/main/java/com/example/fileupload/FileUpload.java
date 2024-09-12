@@ -1,11 +1,11 @@
 package com.example.fileupload;
 
-import java.time.LocalDateTime;
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import java.time.LocalDateTime;
 
 @Entity
 public class FileUpload {
@@ -19,7 +19,9 @@ public class FileUpload {
     private Long fileSize; // File size in bytes
     private LocalDateTime uploadedAt;
 
-    // Getters and Setters
+    @ManyToOne
+    private User user; // Link to the user who uploaded the file
+
     public Long getId() {
         return id;
     }
@@ -67,4 +69,15 @@ public class FileUpload {
     public void setUploadedAt(LocalDateTime uploadedAt) {
         this.uploadedAt = uploadedAt;
     }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    // Getters and Setters
+    // ...
 }
