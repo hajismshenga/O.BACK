@@ -1,4 +1,4 @@
-package com.example.cargo;
+package com.example.fileupload;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
